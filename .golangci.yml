@@ -1,0 +1,38 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - gocyclo
+    - misspell
+    - revive
+    - unconvert
+  settings:
+    errcheck:
+      check-blank: true # ловит `f, _ := os.Create(...)`
+    gocyclo:
+      min-complexity: 15
+    errorlint:
+      errorf: false # %v для ошибок драйвера — осознанно (не раскрывать реализацию)
+  exclusions:
+    generated: lax
+    rules:
+      - path: _test\.go
+        linters: [errcheck]
+        text: "Close"
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes: [github.com/7cout/go-template]
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

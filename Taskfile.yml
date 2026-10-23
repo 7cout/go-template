@@ -1,0 +1,83 @@
+version: "3"
+
+env:
+  CGO_ENABLED: "1" # нужен для -race
+
+vars:
+  DATABASE_URL: '{{.DATABASE_URL | default "postgres://app:app@localhost:5432/app?sslmode=disable"}}'
+
+tasks:
+  default:
+    cmds: [task --list]
+
+  build:
+    desc: Собрать все пакеты и бинарь в bin/
+    cmds:
+      - go build ./...
+      - go build -o bin/server{{exeExt}} ./cmd/server
+
+  test:
+    desc: Тесты с детектором гонок
+    cmds:
+      - go test -race -count=1 ./...
+
+  lint:
+    desc: golangci-lint (версия закреплена в go.mod)
+    cmds:
+      - go tool golangci-lint run ./...
+
+  fmt:
+    desc: Форматирование goimports + gofumpt
+    cmds:
+      - go tool golangci-lint fmt ./...
+
+  vuln:
+    desc: Проверка уязвимостей
+    cmds:
+      - go tool govulncheck ./...
+
+  all:
+    desc: fmt, lint, test, build, vuln — перед сдачей задачи
+    cmds:
+      - task: fmt
+      - task: lint
+      - task: test
+      - task: build
+      - task: vuln
+
+  run:
+    desc: Запустить сервер (in-memory, если не задан DATABASE_URL)
+    cmds:
+      - go run ./cmd/server
+
+  run:pg:
+    desc: Запустить сервер на Postgres из docker compose
+    env:
+      DATABASE_URL: "{{.DATABASE_URL}}"
+    cmds:
+      - go run ./cmd/server
+
+  up:
+    desc: Поднять Postgres и Redis
+    cmds:
+      - docker compose up -d --wait
+
+  down:
+    desc: Остановить инфраструктуру (тома сохраняются)
+    cmds:
+      - docker compose down
+
+  migrate:
+    desc: Применить миграции goose
+    cmds:
+      - goose -dir db/migrations postgres "{{.DATABASE_URL}}" up
+
+  sqlc:
+    desc: Перегенерировать код запросов
+    cmds:
+      - sqlc generate
+
+  proto:lint:
+    desc: Проверить .proto
+    cmds:
+      - buf lint
