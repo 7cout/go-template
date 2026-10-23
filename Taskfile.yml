@@ -4,7 +4,8 @@ env:
   CGO_ENABLED: "1" # нужен для -race
 
 vars:
-  DATABASE_URL: '{{.DATABASE_URL | default "postgres://app:app@localhost:5432/app?sslmode=disable"}}'
+  POSTGRES_PORT: '{{.POSTGRES_PORT | default "5432"}}'
+  DATABASE_URL: '{{.DATABASE_URL | default (print "postgres://app:app@localhost:" .POSTGRES_PORT "/app?sslmode=disable")}}'
 
 tasks:
   default:
@@ -20,6 +21,13 @@ tasks:
     desc: Тесты с детектором гонок
     cmds:
       - go test -race -count=1 ./...
+
+  cover:
+    desc: Покрытие тестами — сводка по функциям, HTML-отчёт в coverage.html
+    cmds:
+      - go test -race -count=1 -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+      - go tool cover -html=coverage.out -o coverage.html
 
   lint:
     desc: golangci-lint (версия закреплена в go.mod)

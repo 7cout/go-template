@@ -1,5 +1,6 @@
 # Только инфраструктура для разработки; сервис запускается на хосте (ТР-8.5).
-# Пароли — dev-значения по умолчанию, переопределяются переменными окружения.
+# Пароли и порты — dev-значения по умолчанию, переопределяются переменными окружения
+# (POSTGRES_PORT, REDIS_PORT — если порт занят другим проектом).
 name: go-template
 
 services:
@@ -9,7 +10,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
       POSTGRES_DB: ${POSTGRES_DB:-app}
-    ports: ["127.0.0.1:5432:5432"]
+    ports: ["127.0.0.1:${POSTGRES_PORT:-5432}:5432"]
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
@@ -18,7 +19,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports: ["127.0.0.1:6379:6379"]
+    ports: ["127.0.0.1:${REDIS_PORT:-6379}:6379"]
     volumes: [redisdata:/data]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
